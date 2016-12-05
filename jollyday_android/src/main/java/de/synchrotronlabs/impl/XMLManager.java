@@ -15,6 +15,8 @@
  */
 package de.synchrotronlabs.impl;
 
+import android.content.res.AssetManager;
+
 import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
@@ -254,16 +256,16 @@ public class XMLManager extends HolidayManager {
 	 * with JAXB to some Java classes.
 	 */
 	@Override
-	public void init(final String calendar) {
+	public void init(final String calendar, AssetManager am) {
 
 		String configurationFileName = getConfigurationFileName(calendar);
-		URL urlDestination = null;
+		InputStream inputStream = null;
 		try {
-			urlDestination = getClass().getClassLoader().getResource(configurationFileName);
+			inputStream = am.open(configurationFileName);
 		} catch (Exception e) {
 			throw new IllegalStateException("Cannot instantiate configuration.", e);
 		}
-		init(urlDestination);
+		init(calendar, inputStream);
 	}
 
 	/**
@@ -274,9 +276,8 @@ public class XMLManager extends HolidayManager {
 	 * with JAXB to some Java classes.
 	 */
 	@Override
-	public void init(final URL url) {
+	public void init(String calendar, final InputStream inputStream) {
 		try {
-			final InputStream inputStream = url.openStream();
 			configuration = xmlUtil.unmarshallConfiguration(inputStream);
 		} catch (Exception e) {
 			throw new IllegalStateException("Cannot instantiate configuration.", e);

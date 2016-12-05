@@ -15,6 +15,9 @@
  */
 package de.synchrotronlabs;
 
+import android.content.res.AssetManager;
+
+import java.io.InputStream;
 import java.net.URL;
 import java.util.Calendar;
 import java.util.HashMap;
@@ -86,8 +89,8 @@ public abstract class HolidayManager {
 	 * 
 	 * @return default locales HolidayManager
 	 */
-	public static final HolidayManager getInstance() {
-		return getInstance((String) null);
+	public static final HolidayManager getInstance(AssetManager assetManager) {
+		return getInstance((String) null, assetManager);
 	}
 
 	/**
@@ -99,8 +102,8 @@ public abstract class HolidayManager {
 	 *            configuration properties to use
 	 * @return default locales HolidayManager
 	 */
-	public static final HolidayManager getInstance(Properties properties) {
-		return getInstance((String) null, properties);
+	public static final HolidayManager getInstance(Properties properties, AssetManager assetManager) {
+		return getInstance((String) null, properties, assetManager);
 	}
 
 	/**
@@ -110,8 +113,8 @@ public abstract class HolidayManager {
 	 *            Country
 	 * @return HolidayManager
 	 */
-	public static final HolidayManager getInstance(final HolidayCalendar c) {
-		return getInstance(c.getId());
+	public static final HolidayManager getInstance(final HolidayCalendar c, AssetManager assetManager) {
+		return getInstance(c.getId(), assetManager);
 	}
 
 	/**
@@ -124,8 +127,8 @@ public abstract class HolidayManager {
 	 *            Country
 	 * @return HolidayManager
 	 */
-	public static final HolidayManager getInstance(final HolidayCalendar c, Properties properties) {
-		return getInstance(c.getId(), properties);
+	public static final HolidayManager getInstance(final HolidayCalendar c, Properties properties, AssetManager assetManager) {
+		return getInstance(c.getId(), properties, assetManager);
 	}
 
 	/**
@@ -137,26 +140,26 @@ public abstract class HolidayManager {
 	 *            a {@link java.lang.String} object.
 	 * @return HolidayManager implementation for the provided country.
 	 */
-	public static final HolidayManager getInstance(final String calendar) {
-		return getInstance(calendar, null);
+	public static final HolidayManager getInstance(final String calendar, AssetManager assetManager) {
+		return getInstance(calendar, null, assetManager);
 	}
 
 	/**
 	 * Creates an HolidayManager instance. The implementing HolidayManager class
 	 * will be read from the configuration properties. If the calendar is NULL
 	 * or an empty string the default locales country code will be used.
-	 * 
+	 *
 	 * @param properties
 	 *            the configuration properties
 	 * @param calendar
 	 *            a {@link java.lang.String} object.
 	 * @return HolidayManager implementation for the provided country.
 	 */
-	public static final HolidayManager getInstance(final String calendar, Properties properties) {
+	public static final HolidayManager getInstance(final String calendar, Properties properties, AssetManager assetManager) {
 		final String calendarName = prepareCalendarName(calendar);
 		HolidayManager m = isManagerCachingEnabled() ? getFromCache(calendarName) : null;
 		if (m == null) {
-			m = createManager(calendarName, properties);
+			m = createManager(calendarName, properties, assetManager);
 		}
 		return m;
 	}
@@ -165,33 +168,33 @@ public abstract class HolidayManager {
 	 * Creates an HolidayManager instance. The implementing HolidayManager class
 	 * will be read from the jollyday.properties file. If the URL is NULL an
 	 * exception will be thrown.
-	 * 
-	 * @param url
+	 *
+	 * @param inputStream
 	 *            the URL to the calendar's file
 	 * @return HolidayManager implementation for the provided country.
 	 */
-	public static final HolidayManager getInstance(final URL url) {
-		return getInstance(url, null);
+	public static final HolidayManager getInstance(final InputStream inputStream, String country) {
+		return getInstance(inputStream, country, null);
 	}
 
 	/**
 	 * Creates an HolidayManager instance. The implementing HolidayManager class
 	 * will be read from the jollyday.properties file. If the URL is NULL an
 	 * exception will be thrown.
-	 * 
+	 *
 	 * @param properties
 	 *            the configuration properties
-	 * @param url
+	 * @param country
 	 *            the URL to the calendar's file
 	 * @return HolidayManager implementation for the provided country.
 	 */
-	public static final HolidayManager getInstance(final URL url, Properties properties) {
-		if (url == null) {
+	public static final HolidayManager getInstance(final InputStream inputStream, String country, Properties properties) {
+		if (country == null) {
 			throw new NullPointerException("Missing URL.");
 		}
-		HolidayManager m = isManagerCachingEnabled() ? getFromCache(url.toString()) : null;
+		HolidayManager m = isManagerCachingEnabled() ? getFromCache(country) : null;
 		if (m == null) {
-			m = createManager(url, properties);
+			m = createManager(inputStream, country, properties);
 		}
 		return m;
 	}
@@ -204,7 +207,7 @@ public abstract class HolidayManager {
 	 *            <code>HolidayManager</code> instance for the calendar
 	 * @return new
 	 */
-	private static HolidayManager createManager(final String calendar, Properties properties) {
+	private static HolidayManager createManager(final String calendar, Properties properties, AssetManager assetManager) {
 		if (LOG.isLoggable(Level.FINER)) {
 			LOG.finer("Creating HolidayManager for calendar '" + calendar + "'. Caching enabled: "
 					+ isManagerCachingEnabled());
@@ -213,7 +216,7 @@ public abstract class HolidayManager {
 		String managerImplClassName = readManagerImplClassName(calendar, props);
 		HolidayManager m = instantiateManagerImpl(managerImplClassName);
 		m.setProperties(props);
-		m.init(calendar);
+		m.init(calendar, assetManager);
 		if (isManagerCachingEnabled()) {
 			putToCache(calendar, m);
 		}
@@ -263,21 +266,21 @@ public abstract class HolidayManager {
 	 * Creates a new <code>HolidayManager</code> instance for the URL and puts
 	 * it to the manager cache.
 	 * 
-	 * @param url
+	 * @param inputStream
 	 *            the URL to a file containing the calendar
 	 * @return the holiday manager initialized with the provided URL
 	 */
-	private static HolidayManager createManager(final URL url, Properties properties) {
+	private static HolidayManager createManager(final InputStream inputStream, String country, Properties properties) {
 		if (LOG.isLoggable(Level.FINER)) {
-			LOG.finer("Creating HolidayManager for URL '" + url + "'. Caching enabled: " + isManagerCachingEnabled());
+			LOG.finer("Creating HolidayManager for URL '" + country + "'. Caching enabled: " + isManagerCachingEnabled());
 		}
 		Properties props = configurationProviderManager.getConfigurationProperties(properties);
 		String managerImplClassName = readManagerImplClassName(null, props);
 		HolidayManager m = instantiateManagerImpl(managerImplClassName);
 		m.setProperties(props);
-		m.init(url);
+		m.init(country, inputStream);
 		if (isManagerCachingEnabled()) {
-			putToCache(url.toString(), m);
+			putToCache(country, m);
 		}
 		return m;
 	}
@@ -457,12 +460,12 @@ public abstract class HolidayManager {
 	 * @param calendar
 	 *            i.e. us, uk, de
 	 */
-	abstract public void init(String calendar);
+	abstract public void init(String calendar, AssetManager am);
 
 	/**
 	 * Initializes the implementing manager for the provided URL.
 	 * 
-	 * @param resource
+	 * @param inputStream
 	 *            the URL, to a file containing the calendar
 	 *            <p style="color:red;font-style:italic">
 	 *            Note 1: This can be omitted, in which case the default
@@ -478,7 +481,7 @@ public abstract class HolidayManager {
 	 *            </p>
 	 * 
 	 */
-	abstract public void init(final URL resource);
+	abstract public void init(String calendar, final InputStream inputStream);
 
 	/**
 	 * Returns the configured hierarchy structure for the specific manager. This
