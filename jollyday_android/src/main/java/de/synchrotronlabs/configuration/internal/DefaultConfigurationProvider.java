@@ -15,12 +15,9 @@
  */
 package de.synchrotronlabs.configuration.internal;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.Properties;
 import java.util.logging.Logger;
 
-import de.synchrotronlabs.HolidayManager;
 import de.synchrotronlabs.configuration.ConfigurationProvider;
 
 /**
@@ -47,6 +44,7 @@ public class DefaultConfigurationProvider implements ConfigurationProvider {
 	 * .util.Properties)
 	 */
 	public void putConfiguration(Properties properties) {
+		properties.put("manager.impl","de.synchrotronlabs.impl.XMLManager");
 		properties.put("parser.impl.de.jollyday.config.Fixed","de.synchrotronlabs.parser.impl.FixedParser");
 		properties.put("parser.impl.de.jollyday.config.FixedWeekdayInMonth","de.synchrotronlabs.parser.impl.FixedWeekdayInMonthParser");
 		properties.put("parser.impl.de.jollyday.config.IslamicHoliday","de.synchrotronlabs.parser.impl.IslamicHolidayParser");
@@ -57,24 +55,6 @@ public class DefaultConfigurationProvider implements ConfigurationProvider {
 		properties.put("parser.impl.de.jollyday.config.FixedWeekdayRelativeToFixed","de.synchrotronlabs.parser.impl.FixedWeekdayRelativeToFixedParser");
 		properties.put("parser.impl.de.jollyday.config.EthiopianOrthodoxHoliday","de.synchrotronlabs.parser.impl.EthiopianOrthodoxHolidayParser");
 		properties.put("parser.impl.de.jollyday.config.RelativeToEasterSunday","de.synchrotronlabs.parser.impl.RelativeToEasterSundayParser");
-
-//		InputStream stream = null;
-//		try {
-//			try {
-//				stream = HolidayManager.class.getClassLoader().getResource(CONFIG_FILE).openStream();
-//				if (stream != null) {
-//					properties.load(stream);
-//				} else {
-//					LOG.warning("Could not load default properties file '" + CONFIG_FILE + "' from classpath.");
-//				}
-//			} finally {
-//				if (stream != null) {
-//					stream.close();
-//				}
-//			}
-//		} catch (IOException e) {
-//			throw new IllegalStateException("Could not load default properties from classpath.", e);
-//		}
 	}
 
 }
